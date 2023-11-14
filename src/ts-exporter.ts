@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { IStrapiModel, IStrapiModelAttribute } from './models/strapi-model';
-import { IConfigOptions } from '..';
+import {IStrapiModel, IStrapiModelAttribute} from './models/strapi-model';
+import {IConfigOptions} from '..';
 
 interface IStrapiModelExtended extends IStrapiModel {
   // use to output filename
@@ -13,6 +13,7 @@ interface IStrapiModelExtended extends IStrapiModel {
 }
 
 const util = {
+  useTypeScriptExtension: false,
 
   // InterfaceName
   defaultToInterfaceName: (name: string) => name ? `I${name.replace(/^./, (str: string) => str.toUpperCase()).replace(/[ ]+./g, (str: string) => str.trimLeft().toUpperCase()).replace(/\//g, '')}` : 'any',
@@ -125,6 +126,7 @@ class Converter {
     if (config.fieldName && typeof config.fieldName === 'function') util.overrideToPropertyName = config.fieldName;
     if (config.outputFileName && typeof config.outputFileName === 'function') util.overrideOutputFileName = config.outputFileName;
 
+    util.useTypeScriptExtension = config.useTypeScriptExtension;
     this.strapiModels = strapiModelsParse.map((m): IStrapiModelExtended => {
 
       const modelName = m._isComponent ?
@@ -149,7 +151,7 @@ class Converter {
       const outputFile = path.resolve(this.config.output, 'index.ts');
 
       const output = this.strapiModels
-        .map(s => `export * from './${s.ouputFile.replace('\\', '/')}';`)
+        .map(s => `export * from './${s.ouputFile.replace('\\', '/')}${this.config.useTypeScriptExtension?'.ts':''}';`)
         .sort()
         .join('\n');
       fs.writeFileSync(outputFile, output + '\n');
@@ -159,7 +161,7 @@ class Converter {
       this.strapiModels.forEach(g => {
         const folder = path.resolve(this.config.output, g.ouputFile);
         if (!fs.existsSync(path.dirname(folder))) fs.mkdirSync(path.dirname(folder));
-        fs.writeFile(`${folder}.ts`, this.strapiModelToInterface(g), { encoding: 'utf8' }, (err) => {
+        fs.writeFile(`${folder}.ts`, this.strapiModelToInterface(g), {encoding: 'utf8'}, (err) => {
           count--;
           if (err) reject(err);
           if (count === 0) resolve(this.strapiModels.length);
@@ -218,7 +220,7 @@ class Converter {
         if (!rel.startsWith('..')) rel = '.' + path.sep + rel;
         return rel.replace('\\', '/').replace('\\', '/');
       }
-      return found ? `import ${(this.config.importAsType && this.config.importAsType(m.interfaceName) ? 'type ' : '')}{ ${found.interfaceName} } from '${toFolder(found)}';` : '';
+      return found ? `import ${(this.config.importAsType && this.config.importAsType(m.interfaceName) ? 'type ' : '')}{ ${found.interfaceName} } from '${toFolder(found)}${this.config.useTypeScriptExtension?'.ts':''}';` : '';
     };
 
     const imports: string[] = [];

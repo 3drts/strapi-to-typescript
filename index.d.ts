@@ -31,6 +31,8 @@ export interface IConfigOptions extends ICommandOptions {
     /** @deprecated use fieldType */
     type: (fieldType: string, fieldName: string, interfaceName: string) => string | undefined;
 
+    useTypeScriptExtension: boolean;
+
     /**
      * Model Strapi attributes name => name of field.
      * (use default, if empty return)
